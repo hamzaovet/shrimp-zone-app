@@ -6,6 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import { CountryProvider } from '@/lib/CountryContext'
 import { CartProvider } from '@/lib/CartContext'
 import CartDrawer from '@/components/cart/CartDrawer'
+import { Providers } from '@/components/Providers'
 
 const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-cairo' })
 
@@ -22,16 +23,18 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${cairo.variable} font-sans antialiased bg-background text-foreground pb-20 md:pb-0`} suppressHydrationWarning>
-        <CountryProvider>
-          <CartProvider>
-            <Header />
-            <main className="min-h-screen">
-              {children}
-            </main>
-            <BottomNav />
-            <CartDrawer />
-          </CartProvider>
-        </CountryProvider>
+        <Providers>
+          <CountryProvider>
+            <CartProvider>
+              <Header />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <BottomNav />
+              <CartDrawer />
+            </CartProvider>
+          </CountryProvider>
+        </Providers>
       </body>
     </html>
   )

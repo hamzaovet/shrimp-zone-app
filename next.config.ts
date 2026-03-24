@@ -7,9 +7,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.postimg.cc', // التصريح بتاع الصور بتاعتك
+      },
     ],
   },
-  // السطرين دول عشان Vercel يعدي التفتيش وميوقفش الرفع
   eslint: {
     ignoreDuringBuilds: true,
   },

@@ -23,7 +23,8 @@ export default function CartDrawer() {
     const itemsText = cartItems.map(item => `${item.quantity}x ${item.title} - ${item.price * item.quantity} ${currency}`).join('\n');
     const msg = `مرحباً شرمب زون، أود طلب:\n\n${itemsText}\n\nالإجمالي: ${cartTotal} ${currency}`;
     const encoded = encodeURIComponent(msg);
-    const phone = country === 'ksa' ? '966500000000' : '201202799990';
+    // WhatsApp Dynamic Routing - Stripping spaces and pluses per instruction
+    const phone = country === 'ksa' ? '966538285831' : '201202799990';
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
   };
 
@@ -100,11 +101,12 @@ export default function CartDrawer() {
             </div>
             <Button 
               onClick={generateWhatsAppMessage}
-              className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg h-14 rounded-2xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg h-14 rounded-2xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg mb-3"
             >
               <MessageCircle className="h-6 w-6" />
               إتمام الطلب عبر واتساب
             </Button>
+            <p className="text-center text-[10px] text-gray-500 font-medium">الأسعار شاملة ضريبة القيمة المضافة. يضاف 12% خدمة داخل الصالة.</p>
           </div>
         )}
       </SheetContent>

@@ -13,14 +13,18 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* LOGO: Far Right due to RTL */}
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative w-[120px] h-[40px]">
-            <Image src="/logo_1.png" alt="Shrimp Zone Logo" fill className="object-contain" priority />
+        <div className="flex shrink-0 items-center">
+          <div className="relative w-32 h-12">
+            <Image src="/logo_1.png" alt="Shrimp Zone Logo" fill sizes="(max-width: 768px) 100vw, 200px" className="object-contain" priority />
           </div>
         </div>
 
         {/* LEFT CONTROLS */}
         <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+            <span className="text-white font-bold text-sm">الخط الساخن:</span>
+            <span className="text-primary font-black text-lg">15911</span>
+          </div>
           <button 
             onClick={() => setDrawerOpen(true)} 
             className="relative p-2 text-white hover:text-primary transition-colors bg-white/5 rounded-full border border-white/10"
