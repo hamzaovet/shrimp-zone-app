@@ -46,6 +46,7 @@ export default function Header() {
               <SelectContent>
                 <SelectItem value="ksa">🇸🇦 السعودية</SelectItem>
                 <SelectItem value="egypt">🇪🇬 مصر</SelectItem>
+                <SelectItem value="uae">🇦🇪 الإمارات</SelectItem>
               </SelectContent>
             </Select>
           ) : (

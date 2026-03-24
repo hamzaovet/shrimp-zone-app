@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="bg-background border-t border-white/10 pt-16 pb-24 md:pb-16 w-full">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
           
           {/* Brand Info */}
           <div className="space-y-4">
@@ -55,12 +55,27 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* UAE Branches */}
+          <div className="space-y-4">
+            <h4 className="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2 inline-block">فروع الإمارات 🇦🇪</h4>
+            <ul className="space-y-3">
+              <li className="flex flex-col">
+                <span className="text-white font-bold">أبوظبي (المصفح)</span>
+                <span className="text-gray-400 text-xs mt-1">المصفح M10 - شارع الحِرف</span>
+              </li>
+              <li className="flex items-center gap-3 mt-2">
+                <span className="text-primary font-black bg-primary/10 px-3 py-1 rounded-full text-sm shadow-sm" dir="ltr">+971522990617</span>
+                <span className="text-gray-300 text-xs">واتساب / اتصال</span>
+              </li>
+            </ul>
+          </div>
+
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/10 text-center">
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} Shrimp Zone. جميع الحقوق محفوظة.
-          </p>
+        <div className="mt-16 pt-8 border-t border-white/10 text-center space-y-2">
+          <p className="text-gray-500 text-xs tracking-wide">Developed by</p>
+          <p className="text-white font-bold text-sm tracking-wider">Nexara-Full Mark Work</p>
+          <p className="text-primary/80 text-xs font-medium tracking-wide" dir="ltr">00201551190990</p>
         </div>
       </div>
     </footer>

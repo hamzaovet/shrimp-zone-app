@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useCart } from "@/lib/CartContext";
 import { useCountry } from "@/lib/CountryContext";
 import { Minus, Plus, Trash2, MessageCircle } from "lucide-react";
@@ -10,27 +11,42 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BRANCHES } from "@/lib/branches";
 
 export default function CartDrawer() {
   const { cartItems, isDrawerOpen, setDrawerOpen, updateQuantity, removeFromCart, cartTotal, addToCart } = useCart();
   const { country, isHydrated } = useCountry();
+  const [selectedBranch, setSelectedBranch] = useState("");
 
   if (!isHydrated) return null;
 
-  const currency = country === 'ksa' ? 'SAR' : 'EGP';
+  const currency = country === 'ksa' ? 'SAR' : country === 'uae' ? 'AED' : 'EGP';
+  const activeBranches = BRANCHES[country] || [];
+  const needsBranchSelection = activeBranches.length > 1;
 
   const generateWhatsAppMessage = () => {
+    let targetPhone = activeBranches[0]?.phone;
+    
+    if (needsBranchSelection) {
+      if (!selectedBranch) {
+        alert("الرجاء اختيار الفرع الأقرب إليك لإتمام الطلب");
+        return;
+      }
+      targetPhone = selectedBranch;
+    }
+
     const itemsText = cartItems.map(item => `${item.quantity}x ${item.title} - ${item.price * item.quantity} ${currency}`).join('\n');
     const msg = `مرحباً شرمب زون، أود طلب:\n\n${itemsText}\n\nالإجمالي: ${cartTotal} ${currency}`;
     const encoded = encodeURIComponent(msg);
-    // WhatsApp Dynamic Routing - Stripping spaces and pluses per instruction
-    const phone = country === 'ksa' ? '966538285831' : '201202799990';
-    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/${targetPhone}?text=${encoded}`, '_blank');
   };
 
   const handleCrossSell = () => {
     if (country === 'ksa') {
       addToCart({ id: 'addon1', title: 'صوص دايناميت', price: 15 });
+    } else if (country === 'uae') {
+      addToCart({ id: 'addonuae', title: 'مشروب غازي', price: 5 });
     } else {
       addToCart({ id: 'addon2', title: 'طحينة إضافية', price: 20 });
     }
@@ -50,7 +66,7 @@ export default function CartDrawer() {
               <p className="text-lg">سلتك فارغة حالياً</p>
             </div>
           ) : (
-            cartItems.map(item => (
+             cartItems.map(item => (
               <div key={item.id} className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
                 <div className="flex-1">
                   <h4 className="text-white font-medium text-sm">{item.title}</h4>
@@ -82,8 +98,8 @@ export default function CartDrawer() {
             <h4 className="text-sm font-bold text-white mb-3">إضافات سريعة 🔥</h4>
             <div className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5">
               <div>
-                <span className="text-white text-sm block">{country === 'ksa' ? 'صوص دايناميت' : 'طحينة إضافية'}</span>
-                <span className="text-primary text-xs font-bold">{country === 'ksa' ? '15 SAR' : '20 EGP'}</span>
+                <span className="text-white text-sm block">{country === 'ksa' ? 'صوص دايناميت' : country === 'uae' ? 'مشروب غازي' : 'طحينة إضافية'}</span>
+                <span className="text-primary text-xs font-bold">{country === 'ksa' ? '15 SAR' : country === 'uae' ? '5 AED' : '20 EGP'}</span>
               </div>
               <Button onClick={handleCrossSell} size="sm" className="bg-primary/20 hover:bg-primary/40 text-primary font-bold rounded-full h-8 px-4">
                 <Plus className="h-4 w-4 ml-1" /> إضافة
@@ -99,6 +115,22 @@ export default function CartDrawer() {
               <span className="text-gray-300 font-medium">الإجمالي:</span>
               <span className="text-3xl font-black text-primary">{cartTotal} {currency}</span>
             </div>
+            
+            {needsBranchSelection && (
+              <div className="mb-4">
+                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                  <SelectTrigger className="w-full bg-white/5 border-white/20 text-white h-12 rounded-xl text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الفرع الأقرب إليك" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeBranches.map(b => (
+                      <SelectItem key={b.phone} value={b.phone} className="text-right">{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <Button 
               onClick={generateWhatsAppMessage}
               className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg h-14 rounded-2xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg mb-3"

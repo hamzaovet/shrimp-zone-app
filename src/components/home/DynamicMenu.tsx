@@ -1,24 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useCountry } from "@/lib/CountryContext";
 import { useCart } from "@/lib/CartContext";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const ALL_CATEGORIES = [
-  'عرض الصواني', 'ميني صواني', 'الطواجن', 'الكيس الحراري', 
-  'وجبات', 'الشوربة', 'الباستا', 'الارز', 
-  'السندوتشات', 'مقبلات', 'السلطات والصوصات', 'مشروبات'
-];
-
 export default function DynamicMenu() {
   const { country, isHydrated } = useCountry();
   const { addToCart } = useCart();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES[0]);
+  const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -35,24 +29,22 @@ export default function DynamicMenu() {
     fetchMenu();
   }, []);
 
+  const currentCountryStr = country === 'ksa' ? 'السعودية SA' : country === 'uae' ? 'الإمارات AE' : 'مصر';
+  const currency = country === 'ksa' ? 'SAR' : country === 'uae' ? 'AED' : 'EGP';
+
+  const countryItems = useMemo(() => items.filter(i => i.country === currentCountryStr), [items, currentCountryStr]);
+  const availableCategories = useMemo(() => Array.from(new Set(countryItems.map(i => i.category))), [countryItems]);
+
   useEffect(() => {
-    if (!loading && items.length > 0) {
-      const currentCountryStr = country === 'ksa' ? 'السعودية SA' : 'مصر';
-      const countryItems = items.filter(i => i.country === currentCountryStr);
-      const availableCategories = ALL_CATEGORIES.filter(cat => countryItems.some(i => i.category === cat));
-      if (availableCategories.length > 0 && !availableCategories.includes(activeCategory)) {
-        setActiveCategory(availableCategories[0]);
+    if (!loading && availableCategories.length > 0) {
+      if (!availableCategories.includes(activeCategory)) {
+        setActiveCategory(availableCategories[0] as string);
       }
     }
-  }, [country, items, loading]); 
+  }, [availableCategories, activeCategory, loading]); 
 
   if (!isHydrated) return null;
 
-  const currentCountryStr = country === 'ksa' ? 'السعودية SA' : 'مصر';
-  const currency = country === 'ksa' ? 'SAR' : 'EGP';
-
-  const countryItems = items.filter(i => i.country === currentCountryStr);
-  const availableCategories = ALL_CATEGORIES.filter(cat => countryItems.some(i => i.category === cat));
   const currentCategoryItems = countryItems.filter(i => i.category === activeCategory);
 
   return (
@@ -72,14 +64,14 @@ export default function DynamicMenu() {
               {availableCategories.map((cat, index) => (
                 <button
                   key={index}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => setActiveCategory(cat as string)}
                   className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
                     activeCategory === cat
                       ? 'bg-primary text-white shadow-[0_0_15px_rgba(255,87,34,0.4)] scale-105'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
                   }`}
                 >
-                  {cat}
+                  {cat as string}
                 </button>
               ))}
             </div>

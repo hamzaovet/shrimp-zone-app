@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'i.postimg.cc', // التصريح بتاع الصور بتاعتك
+        hostname: 'i.postimg.cc',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co', // التصريح الجديد لصور ImgBB
       },
     ],
   },

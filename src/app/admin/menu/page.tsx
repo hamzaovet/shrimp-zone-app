@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UtensilsCrossed, Plus, Trash2, Edit } from "lucide-react";
+import { UtensilsCrossed, Plus, Trash2, Edit, Upload, ImageIcon } from "lucide-react";
 
 export default function MenuManagement() {
   const [items, setItems] = useState<any[]>([]);
@@ -11,9 +11,11 @@ export default function MenuManagement() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', category: 'عرض الصواني', image: '', country: 'السعودية SA'
+    name: '', description: '', price: '', category: '', image: '', country: 'السعودية SA'
   });
 
   const fetchMenu = async () => {
@@ -32,7 +34,8 @@ export default function MenuManagement() {
 
   const openAddModal = () => {
     setEditItemId(null);
-    setFormData({ name: '', description: '', price: '', category: 'عرض الصواني', image: '', country: 'السعودية SA' });
+    setFormData({ name: '', description: '', price: '', category: '', image: '', country: 'السعودية SA' });
+    setUploadError("");
     setModalOpen(true);
   };
 
@@ -46,6 +49,7 @@ export default function MenuManagement() {
       image: item.image || '',
       country: item.country
     });
+    setUploadError("");
     setModalOpen(true);
   };
 
@@ -56,6 +60,38 @@ export default function MenuManagement() {
       fetchMenu();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError("");
+
+    try {
+      const body = new FormData();
+      body.append("image", file);
+
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+        { method: "POST", body }
+      );
+
+      if (!res.ok) throw new Error("فشل رفع الصورة. تحقق من مفتاح API.");
+
+      const json = await res.json();
+      const url = json?.data?.display_url;
+
+      if (!url) throw new Error("لم يتم العثور على رابط الصورة في الاستجابة.");
+
+      setFormData(prev => ({ ...prev, image: url }));
+    } catch (err: any) {
+      console.error(err);
+      setUploadError(err.message || "حدث خطأ أثناء رفع الصورة.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -84,6 +120,18 @@ export default function MenuManagement() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const getCurrency = (country: string) => {
+    if (country === 'السعودية SA') return 'SAR';
+    if (country === 'الإمارات AE') return 'AED';
+    return 'EGP';
+  };
+
+  const getFlag = (country: string) => {
+    if (country === 'السعودية SA') return '🇸🇦';
+    if (country === 'الإمارات AE') return '🇦🇪';
+    return '🇪🇬';
   };
 
   return (
@@ -117,7 +165,7 @@ export default function MenuManagement() {
                 <div className="flex justify-between items-start mb-2 gap-4">
                   <h3 className="text-xl font-bold text-white leading-tight">{item.name}</h3>
                   <span className="text-primary font-black bg-primary/10 px-3 py-1 rounded-lg text-sm whitespace-nowrap">
-                    {item.price} {item.country === 'السعودية SA' ? 'SAR' : 'EGP'}
+                    {item.price} {getCurrency(item.country)}
                   </span>
                 </div>
                 {item.description && (
@@ -126,7 +174,7 @@ export default function MenuManagement() {
                 <div className="flex justify-between items-center text-sm font-medium mt-auto mb-4">
                   <span className="bg-white/10 text-gray-300 px-3 py-1 rounded-full">{item.category}</span>
                   <span className="text-gray-400 flex items-center gap-1">
-                    {item.country === 'السعودية SA' ? '🇸🇦' : '🇪🇬'} {item.country}
+                    {getFlag(item.country)} {item.country}
                   </span>
                 </div>
                 
@@ -167,12 +215,7 @@ export default function MenuManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">القسم (Category)</label>
-                  <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-[#121b36] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
-                    <option value="" disabled>اختر القسم</option>
-                    {['عرض الصواني', 'ميني صواني', 'الطواجن', 'الكيس الحراري', 'وجبات', 'الشوربة', 'الباستا', 'الارز', 'السندوتشات', 'مقبلات', 'السلطات والصوصات', 'مشروبات'].map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                  <input required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="أكياس, مقالي, سلطات..." />
                 </div>
               </div>
               
@@ -181,9 +224,59 @@ export default function MenuManagement() {
                 <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none" placeholder="اكتب تفاصيل أو مكونات الطبق هنا..." />
               </div>
               
+              {/* Image Upload Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">رابط الصورة (Unsplash URL)</label>
-                <input required value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="https://images.unsplash.com/..." dir="ltr" />
+                <label className="block text-sm font-medium text-gray-300 mb-2">صورة الصنف</label>
+                <div className="relative">
+                  <label
+                    htmlFor="image-upload"
+                    className={`flex items-center justify-center gap-3 w-full bg-white/5 border-2 border-dashed rounded-xl px-4 py-5 cursor-pointer transition-all hover:border-primary/50 hover:bg-white/10 ${
+                      isUploading ? 'border-primary/40 animate-pulse' : 'border-white/10'
+                    }`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="text-primary font-bold text-sm">جاري رفع الصورة...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-gray-400" />
+                        <span className="text-gray-400 text-sm">اضغط لاختيار صورة أو اسحبها هنا</span>
+                      </>
+                    )}
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </div>
+
+                {uploadError && (
+                  <p className="text-red-400 text-xs mt-2 flex items-center gap-1">⚠️ {uploadError}</p>
+                )}
+
+                {formData.image && !isUploading && (
+                  <div className="mt-3 relative group">
+                    <div className="relative h-32 w-full rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                      <img src={formData.image} alt="معاينة" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-bold flex items-center gap-1"><ImageIcon className="h-4 w-4" /> تم الرفع بنجاح ✓</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                      className="absolute top-2 left-2 bg-destructive/80 hover:bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
               
               <div>
@@ -191,12 +284,13 @@ export default function MenuManagement() {
                 <select value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="w-full bg-[#121b36] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
                   <option value="السعودية SA">🇸🇦 السعودية SA</option>
                   <option value="مصر">🇪🇬 مصر</option>
+                  <option value="الإمارات AE">🇦🇪 الإمارات AE</option>
                 </select>
               </div>
               
               <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-white/10">
                 <Button type="button" onClick={() => setModalOpen(false)} variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/5 rounded-xl">إلغاء</Button>
-                <Button type="submit" disabled={isSubmitting} className="bg-[#FF5722] hover:bg-[#FF5722]/90 text-white font-bold px-8 rounded-xl h-11 transition-transform hover:scale-[1.02]">
+                <Button type="submit" disabled={isSubmitting || isUploading} className="bg-[#FF5722] hover:bg-[#FF5722]/90 text-white font-bold px-8 rounded-xl h-11 transition-transform hover:scale-[1.02]">
                   {isSubmitting ? "جاري الحفظ..." : (editItemId ? "تحديث الصنف" : "إضافة الصنف")}
                 </Button>
               </div>

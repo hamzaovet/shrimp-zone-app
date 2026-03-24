@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-type Country = 'ksa' | 'egypt';
+type Country = 'ksa' | 'egypt' | 'uae';
 
 interface CountryContextType {
   country: Country;
@@ -21,7 +21,7 @@ export function CountryProvider({ children }: { children: React.ReactNode }) {
     setIsHydrated(true);
     // Optional: read from localStorage if you wanted persistence, else default to 'ksa'
     const saved = localStorage.getItem('user_country') as Country;
-    if (saved && (saved === 'ksa' || saved === 'egypt')) {
+    if (saved && (saved === 'ksa' || saved === 'egypt' || saved === 'uae')) {
       setCountry(saved);
     }
   }, []);
