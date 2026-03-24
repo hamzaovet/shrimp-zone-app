@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useCart } from "@/lib/CartContext";
 import { useCountry } from "@/lib/CountryContext";
-import { MessageCircle, User, MapPin, Phone } from "lucide-react";
+import { MessageCircle, User, MapPin, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,6 +16,12 @@ const COUNTRY_CODES: Record<string, string> = {
   egypt: "+20",
   ksa: "+966",
   uae: "+971",
+};
+
+const COUNTRY_DB_MAP: Record<string, string> = {
+  egypt: "مصر",
+  ksa: "السعودية SA",
+  uae: "الإمارات AE",
 };
 
 const STORAGE_KEY = "shrimpZoneCustomer";
@@ -31,16 +37,17 @@ interface CheckoutDialogProps {
   onOpenChange: (open: boolean) => void;
   targetPhone: string;
   currency: string;
+  branchName?: string;
 }
 
-export default function CheckoutDialog({ open, onOpenChange, targetPhone, currency }: CheckoutDialogProps) {
+export default function CheckoutDialog({ open, onOpenChange, targetPhone, currency, branchName }: CheckoutDialogProps) {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { country } = useCountry();
 
   const [customer, setCustomer] = useState<CustomerData>({ name: "", address: "", phone: "" });
   const [errors, setErrors] = useState<Partial<CustomerData>>({});
+  const [isSending, setIsSending] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     if (open) {
       try {
@@ -50,7 +57,7 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
           setCustomer(parsed);
         }
       } catch {
-        // ignore parse errors
+        // ignore
       }
       setErrors({});
     }
@@ -67,15 +74,43 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
 
-    // Save to localStorage for returning customers
+    setIsSending(true);
+
+    // Save to localStorage
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customer));
 
     const fullPhone = `${countryCode}${customer.phone.replace(/^0+/, "")}`;
 
-    // Build professional Arabic invoice
+    // 1. Save order to DB
+    try {
+      const orderPayload = {
+        customerName: customer.name,
+        customerPhone: fullPhone,
+        address: customer.address,
+        country: COUNTRY_DB_MAP[country] || "مصر",
+        branch: branchName || "",
+        items: cartItems.map(item => ({
+          name: item.title,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalAmount: cartTotal,
+      };
+
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+    } catch (err) {
+      console.error("Order save error:", err);
+      // Continue to WhatsApp even if DB save fails
+    }
+
+    // 2. Build WhatsApp invoice
     const itemLines = cartItems
       .map((item) => `- ${item.quantity}x ${item.title} (${item.price * item.quantity} ${currency})`)
       .join("\n");
@@ -96,6 +131,9 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
     const encoded = encodeURIComponent(msg);
     window.open(`https://wa.me/${targetPhone}?text=${encoded}`, "_blank");
 
+    // 3. Clear cart & close
+    clearCart();
+    setIsSending(false);
     onOpenChange(false);
   };
 
@@ -129,7 +167,6 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-white">بيانات التوصيل</h4>
 
-            {/* Name */}
             <div>
               <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
                 <User className="h-3.5 w-3.5" /> الاسم بالكامل
@@ -143,7 +180,6 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
               {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
             </div>
 
-            {/* Phone */}
             <div>
               <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
                 <Phone className="h-3.5 w-3.5" /> رقم الهاتف
@@ -165,7 +201,6 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
               {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
             </div>
 
-            {/* Address */}
             <div>
               <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
                 <MapPin className="h-3.5 w-3.5" /> العنوان بالتفصيل
@@ -186,10 +221,14 @@ export default function CheckoutDialog({ open, onOpenChange, targetPhone, curren
         <div className="p-5 border-t border-white/10 bg-background pb-safe">
           <Button
             onClick={handleSubmit}
-            className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg h-14 rounded-2xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 mb-3"
+            disabled={isSending}
+            className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg h-14 rounded-2xl transition-transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 mb-3 disabled:opacity-50 disabled:scale-100"
           >
-            <MessageCircle className="h-6 w-6" />
-            إرسال الطلب عبر واتساب
+            {isSending ? (
+              <><Loader2 className="h-6 w-6 animate-spin" /> جاري إرسال الطلب...</>
+            ) : (
+              <><MessageCircle className="h-6 w-6" /> إرسال الطلب عبر واتساب</>
+            )}
           </Button>
           <p className="text-center text-[10px] text-gray-500 font-medium">
             الأسعار شاملة ضريبة القيمة المضافة. يضاف 12% خدمة داخل الصالة.

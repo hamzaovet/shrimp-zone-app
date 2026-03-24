@@ -151,6 +151,7 @@ export default function CartDrawer() {
         onOpenChange={setCheckoutOpen}
         targetPhone={getTargetPhone()}
         currency={currency}
+        branchName={needsBranchSelection ? activeBranches.find(b => b.phone === selectedBranch)?.name : activeBranches[0]?.name}
       />
     </>
   );

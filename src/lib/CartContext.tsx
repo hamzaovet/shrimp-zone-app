@@ -8,7 +8,7 @@ export interface CartItem {
   title: string;
   price: number;
   quantity: number;
-  country: 'ksa' | 'egypt';
+  country: 'ksa' | 'egypt' | 'uae';
 }
 
 interface CartContextType {
@@ -16,6 +16,7 @@ interface CartContextType {
   addToCart: (item: Omit<CartItem, "quantity" | "country">) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
+  clearCart: () => void;
   isDrawerOpen: boolean;
   setDrawerOpen: (isOpen: boolean) => void;
   cartTotal: number;
@@ -60,11 +61,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }));
   }
 
+  const clearCart = () => {
+    setCartItems([]);
+  }
+
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, isDrawerOpen, setDrawerOpen, cartTotal, cartCount }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, isDrawerOpen, setDrawerOpen, cartTotal, cartCount }}>
       {children}
     </CartContext.Provider>
   );
